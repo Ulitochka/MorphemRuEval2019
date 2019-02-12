@@ -57,7 +57,7 @@ class MorphemsDataSetCreator:
 
             outfile.close()
 
-    def get_morph_borders(self, data):
+    def get_morph_borders(self, data, classes=True):
         borders = []
         for pair in data:
             forma = pair[0]
@@ -70,13 +70,26 @@ class MorphemsDataSetCreator:
                 chars = list(forma)
 
                 try:
-                    borders.append((' '.join(list(forma)),
-                                    ' '.join([chars[index_char] + '_' if borders_indexes[index_char] == 1
-                                    else chars[index_char] for index_char in range(len(borders_indexes))])))
+                    if not classes:
+                        borders.append((' '.join(list(forma)),
+                                        ' '.join([chars[index_char] + '_' if borders_indexes[index_char] == 1
+                                        else chars[index_char] for index_char in range(len(borders_indexes))])))
+                    else:
+                        borders.append((' '.join(list(forma)),
+                                        ' '.join(['1' if borders_indexes[index_char] == 1
+                                                  else '0' for index_char in
+                                                  range(len(borders_indexes))])))
+
                 except IndexError:
                     print(chars, borders_indexes, morphems)
+
             else:
-                borders.append((' '.join(list(forma)), ' '.join(list(forma))))
+
+                if not classes:
+                    borders.append((' '.join(list(forma)), ' '.join(list(forma))))
+                else:
+                    borders.append((' '.join(list(forma)), ' '.join(list('0' for index_char in
+                                                  range(len(forma))))))
 
         return borders
 
@@ -100,9 +113,9 @@ class MorphemsDataSetCreator:
             data_set = {
 
                 "tokens_chars": {
-                    "train": self.get_morph_borders(X_train),
-                    "test": self.get_morph_borders(X_test),
-                    "valid": self.get_morph_borders(X_valid)
+                    "train": self.get_morph_borders(X_train, classes=True),
+                    "test": self.get_morph_borders(X_test, classes=True),
+                    "valid": self.get_morph_borders(X_valid, classes=True)
                 }
 
             }

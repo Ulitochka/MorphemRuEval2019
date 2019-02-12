@@ -7,7 +7,7 @@ from pprint import pprint
 
 from sklearn.model_selection import KFold, train_test_split
 
-from MorphemRuEval2019.lemmatizer.data_loader import DataLoader
+from lemmatizer.data_loader import DataLoader
 
 
 class SetEncoder(json.JSONEncoder):

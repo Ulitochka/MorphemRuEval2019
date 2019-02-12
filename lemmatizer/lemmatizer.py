@@ -1,7 +1,9 @@
 import configargparse
-from MorphemRuEval2019.lemmatizer.OpenNMT_py.onmt.utils.misc import split_lemmatize_corpus, count_sent
-from MorphemRuEval2019.lemmatizer.OpenNMT_py.onmt.translate.translator import build_translator
-import MorphemRuEval2019.lemmatizer.OpenNMT_py.onmt.opts as opts
+import importlib
+
+misc = importlib.import_module("OpenNMT-py.onmt.utils.misc")
+translator = importlib.import_module("OpenNMT-py.onmt.translate.translator")
+opts = importlib.import_module("OpenNMT-py.onmt.opts")
 
 
 class Lemmatizer:
@@ -32,13 +34,13 @@ class Lemmatizer:
     def __init__(self, opt):
         self.opt = opt
         self.max_sent_len = 0
-        self.translator = build_translator(self.opt, report_score=True)
+        self.translator = translator.build_translator(self.opt, report_score=True)
         self.input_data = self.form_input()
         print('Translator ready.')
 
     def form_input(self):
-        src_shards = split_lemmatize_corpus(self.opt.src)
-        c_s, max_len_s = count_sent(self.opt.src)
+        src_shards = misc.split_lemmatize_corpus(self.opt.src)
+        c_s, max_len_s = misc.count_sent(self.opt.src)
         self.max_sent_len = max_len_s
         tgt_shards = [None] * c_s
         return zip(src_shards, tgt_shards)
@@ -51,8 +53,7 @@ class Lemmatizer:
                 src_dir=self.opt.src_dir,
                 batch_size=self.max_sent_len,
                 attn_debug=self.opt.attn_debug,
-                use_sent_borders=True,
-                sent_index=i
+                use_sent_borders=True
             )
 
 

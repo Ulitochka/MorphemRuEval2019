@@ -45,8 +45,9 @@ n u & i d u & k a & b a l d i t ͡ ʃ a ː w & b i & m o h a d u ː & a h a
 
 ## Порядок действий
 
-- Клонирование репозитория. `git clone https://github.com/Ulitochka/OpenNMT-py.git`
-- Установка библиотек. `pip install -r requirements.txt`
+- Клонирование репозитория. `git clone https://github.com/Ulitochka/MorphemRuEval2019`
+- Установка библиотек для лемматизатора. В каталоге `/MorphemRuEval2019/lemmatizer/OpenNMT-py/` выполнить 
+`pip install -r requirements.txt`
 - Подготовка данных. `python3 -m lemmatizer.lemma_data_set_former --folds 10`
 - Создание словарей для обучения моделей. `./preprocess.sh` В скрипте необходимо прописать тип данных: token_pos, token_chars_pos, 
 token_chars, sentence_tokens, sentence_chars_pos, sentence_chars.

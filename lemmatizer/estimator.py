@@ -1,7 +1,7 @@
 import os
 from itertools import groupby
 
-from MorphemRuEval2019.lemmatizer.tools import Tools
+from tools import Tools
 
 
 class Estimator:
