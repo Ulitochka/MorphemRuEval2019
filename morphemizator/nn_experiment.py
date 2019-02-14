@@ -68,6 +68,7 @@ unique_chars = {ch: i + 1 for i, ch in enumerate(sorted(set([ch[0] for w in trai
 unique_labels = sorted(set([ch[1] for w in train + test for ch in w]))
 
 labels2ind = {l: i + 1 for i, l in enumerate(unique_labels)}
+ind2labels = {i+ 1: l  for i, l in enumerate(unique_labels)}
 print('unique_labels: ', len(labels2ind))
 
 x_train = [[unique_chars.get(ch[0]) for ch in w] for w in train]
@@ -192,9 +193,9 @@ model_mk2.fit(
     x=x_train,
     y=y_train,
     batch_size=32,
-    epochs=10,
+    epochs=1,
     validation_split=0.1,
-    verbose=1,
+    verbose=20,
     shuffle=True,
     callbacks=[model_checkpoint, early_stopping])
 
@@ -217,4 +218,6 @@ custom_objects = {'CRF': CRF, 'crf_loss': crf_loss}
 model = load_model(os.path.join(model_path + '/model.pkl'), custom_objects=custom_objects)
 pr = model.predict(x_test, verbose=1)
 y_test, pr = preparation_data_to_score(y_test, pr)
-print(classification_report(y_test, pr, digits=4, target_names=unique_labels))
+y_test = [ind2labels[l] for l in y_test]
+pr = [ind2labels.get(l, "ROOT") for l in pr]
+print(classification_report(y_test, pr, digits=4))
