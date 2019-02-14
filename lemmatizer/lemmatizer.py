@@ -1,5 +1,7 @@
 import configargparse
 import importlib
+import codecs
+from itertools import groupby
 
 misc = importlib.import_module("OpenNMT-py.onmt.utils.misc")
 translator = importlib.import_module("OpenNMT-py.onmt.translate.translator")
@@ -37,6 +39,21 @@ class Lemmatizer:
         self.translator = translator.build_translator(self.opt, report_score=True)
         self.input_data = self.form_input()
         print('Translator ready.')
+
+    def count_sent(self, path):
+        with codecs.open(path, "r", encoding="utf-8") as f:
+            sentences = [[t.split('\t') for t in list(y)] for x, y in groupby(f.readlines(), lambda z: z == '\n') if
+                         not x]
+            return len(sentences), max([len(s) for s in sentences])
+
+    def split_lemmatize_corpus(self, path):
+        with codecs.open(path, "r", encoding="utf-8") as f:
+            sentences = [[t.split('\t') for t in list(y)] for x, y in groupby(f.readlines(), lambda z: z == '\n') if
+                         not x]
+            sentences = [[' '.join(list(t[1])) + ' ' + t[3] for t in s] for s in sentences if s != ['\n']]
+            while True:
+                for s in sentences:
+                    yield s
 
     def form_input(self):
         src_shards = misc.split_lemmatize_corpus(self.opt.src)
