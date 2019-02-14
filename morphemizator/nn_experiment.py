@@ -56,7 +56,7 @@ for s in data_set:
         x = read_file(os.path.join(data_path, data_set[s]["x"]))
         y = read_file(os.path.join(data_path, data_set[s]["y"]))
         data_set[s]["data"] = [
-            [el for el in list(zip(list(w[0]), list(w[1]))) if el != (' ', ' ')] for w in list(zip(x, y))
+            [el for el in list(zip(w[0].split(), w[1].split())) if el != (' ', ' ')] for w in list(zip(x, y))
         ]
 
 train = data_set["train"]["data"] + data_set["valid"]["data"]
@@ -65,24 +65,27 @@ test = data_set["test"]["data"]
 ########################################################################################################################
 
 unique_chars = {ch: i + 1 for i, ch in enumerate(sorted(set([ch[0] for w in train + test for ch in w])))}
-unique_labels = {l: i + 1 for i, l in enumerate(sorted(set([ch[1] for w in train + test for ch in w])))}
+unique_labels = sorted(set([ch[1] for w in train + test for ch in w]))
+
+labels2ind = {l: i + 1 for i, l in enumerate(unique_labels)}
+print('unique_labels: ', len(labels2ind))
 
 x_train = [[unique_chars.get(ch[0]) for ch in w] for w in train]
-y_train = [[unique_labels.get(ch[1]) for ch in w] for w in train]
+y_train = [[labels2ind.get(ch[1]) for ch in w] for w in train]
 
 x_test = [[unique_chars.get(ch[0]) for ch in w] for w in test]
-y_test = [[unique_labels.get(ch[1]) for ch in w] for w in test]
+y_test = [[labels2ind.get(ch[1]) for ch in w] for w in test]
 
 max_w_len = max([len(w) for w in train])
 print('max_token_len: ', max_w_len)
 
 x_train = pad_sequences(x_train, maxlen=max_w_len, value=0, padding='pre', truncating='pre')
 y_train = pad_sequences(y_train, maxlen=max_w_len, value=0, padding='pre', truncating='pre')
-y_train = to_categorical(y_train, len(unique_labels)+1)
+y_train = to_categorical(y_train, len(labels2ind)+1)
 
 x_test = pad_sequences(x_test, maxlen=max_w_len, value=0, padding='pre', truncating='pre')
 y_test = pad_sequences(y_test, maxlen=max_w_len, value=0, padding='pre', truncating='pre')
-y_test = to_categorical(y_test, len(unique_labels)+1)
+y_test = to_categorical(y_test, len(labels2ind)+1)
 
 print('ch2ind:', x_train[0])
 print('l2ind:', y_train[2])
@@ -159,10 +162,10 @@ outputs = Add()([transformed_gated, carried_gated])
 highway = Model(inputs=hway_input, outputs=outputs)
 chars_vectors = highway(cnns)
 
-lstm_enc, fh, fc, bh, bc = Bidirectional(LSTM(512, return_sequences=True, return_state=True))(chars_vectors)
-lstm_dec = Bidirectional(LSTM(512, return_sequences=True))(lstm_enc, initial_state=[bh, bc, fh, fc])
+lstm_enc, fh, fc, bh, bc = Bidirectional(LSTM(256, return_sequences=True, return_state=True))(chars_vectors)
+lstm_dec = Bidirectional(LSTM(256, return_sequences=True))(lstm_enc, initial_state=[bh, bc, fh, fc])
 
-lyr_crf = CRF(3)
+lyr_crf = CRF(len(labels2ind) + 1)
 output = lyr_crf(lstm_dec)
 
 model_mk2 = Model(inputs=input_char_emb, outputs=output)
@@ -189,7 +192,7 @@ model_mk2.fit(
     x=x_train,
     y=y_train,
     batch_size=32,
-    epochs=20,
+    epochs=10,
     validation_split=0.1,
     verbose=1,
     shuffle=True,
@@ -214,4 +217,4 @@ custom_objects = {'CRF': CRF, 'crf_loss': crf_loss}
 model = load_model(os.path.join(model_path + '/model.pkl'), custom_objects=custom_objects)
 pr = model.predict(x_test, verbose=1)
 y_test, pr = preparation_data_to_score(y_test, pr)
-print(classification_report(y_test, pr, digits=4))
+print(classification_report(y_test, pr, digits=4, target_names=unique_labels))

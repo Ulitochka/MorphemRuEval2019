@@ -57,40 +57,32 @@ class MorphemsDataSetCreator:
 
             outfile.close()
 
-    def get_morph_borders(self, data, classes=True):
+    def classes2chars(self, morphema_with_class):
+        result = []
+        for i, ch in enumerate(morphema_with_class[0]):
+
+            result.append((ch, morphema_with_class[1]))
+
+            # if i == 0:
+            #     result.append((ch, 'B-' + morphema_with_class[1]))
+            # elif i > 0:
+            #     if i == len(morphema_with_class[0])-1:
+            #         result.append((ch, 'O-' + morphema_with_class[1]))
+            #     else:
+            #         result.append((ch, 'I-' + morphema_with_class[1]))
+
+        return result
+
+    def get_morph_borders(self, data):
         borders = []
         for pair in data:
-            forma = pair[0]
-            morphems = [m.split('_')[0] for m in pair[1].split()]
-            bs = self.find_char_positions(morphems, forma)
-
-            if len(bs) > 1:
-                borders_indexes = [1 if m[-1] == s else 0 for m in morphems for s in m]
-                borders_indexes = borders_indexes[:-1] + [0]
-                chars = list(forma)
-
-                try:
-                    if not classes:
-                        borders.append((' '.join(list(forma)),
-                                        ' '.join([chars[index_char] + '_' if borders_indexes[index_char] == 1
-                                        else chars[index_char] for index_char in range(len(borders_indexes))])))
-                    else:
-                        borders.append((' '.join(list(forma)),
-                                        ' '.join(['1' if borders_indexes[index_char] == 1
-                                                  else '0' for index_char in
-                                                  range(len(borders_indexes))])))
-
-                except IndexError:
-                    print(chars, borders_indexes, morphems)
-
-            else:
-
-                if not classes:
-                    borders.append((' '.join(list(forma)), ' '.join(list(forma))))
-                else:
-                    borders.append((' '.join(list(forma)), ' '.join(list('0' for index_char in
-                                                  range(len(forma))))))
-
+            morphems_with_classes = [(m.split('_')[0], m.split('_')[1]) if '_' in m else (m, 'ROOT') for m in pair[1].split()]
+            classes_to_chars = [self.classes2chars(el) for el in morphems_with_classes]
+            classes_to_chars = [ch for m in classes_to_chars for ch in m]
+            borders.append(
+                (' '.join([el[0] for el in classes_to_chars]),
+                 ' '.join([el[1] for el in classes_to_chars]))
+            )
         return borders
 
     def find_char_positions(self, patterns, initial_text):
@@ -113,9 +105,9 @@ class MorphemsDataSetCreator:
             data_set = {
 
                 "tokens_chars": {
-                    "train": self.get_morph_borders(X_train, classes=True),
-                    "test": self.get_morph_borders(X_test, classes=True),
-                    "valid": self.get_morph_borders(X_valid, classes=True)
+                    "train": self.get_morph_borders(X_train),
+                    "test": self.get_morph_borders(X_test),
+                    "valid": self.get_morph_borders(X_valid)
                 }
 
             }
