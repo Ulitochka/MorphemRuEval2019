@@ -10,7 +10,7 @@ from keras.utils import to_categorical
 import keras.initializers
 import gc; gc.collect()
 from keras import backend as K
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, f1_score
 from keras_contrib.layers import CRF
 from keras_contrib.losses import crf_loss
 
@@ -193,7 +193,7 @@ model_mk2.fit(
     x=x_train,
     y=y_train,
     batch_size=32,
-    epochs=1,
+    epochs=10,
     validation_split=0.1,
     verbose=20,
     shuffle=True,
@@ -221,3 +221,4 @@ y_test, pr = preparation_data_to_score(y_test, pr)
 y_test = [ind2labels[l] for l in y_test]
 pr = [ind2labels.get(l, "ROOT") for l in pr]
 print(classification_report(y_test, pr, digits=4))
+print(f1_score(y_test, pr, average='macro'))
