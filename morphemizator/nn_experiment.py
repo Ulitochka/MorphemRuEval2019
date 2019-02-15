@@ -69,6 +69,8 @@ test = data_set["test"]["data"]
 unique_chars = {ch: i + 1 for i, ch in enumerate(sorted(set([ch[0] for w in train + test for ch in w])))}
 unique_labels = sorted(set([ch[1] for w in train + test for ch in w]))
 
+print(unique_labels)
+
 labels2ind = {l: i + 1 for i, l in enumerate(unique_labels)}
 ind2labels = {i+ 1: l  for i, l in enumerate(unique_labels)}
 print('unique_labels: ', len(labels2ind))

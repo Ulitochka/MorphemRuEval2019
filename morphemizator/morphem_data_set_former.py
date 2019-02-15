@@ -20,6 +20,17 @@ class MorphemsDataSetCreator:
         self.sentences = self.read_file()
         self.corrupted_lemmas = ['_']
 
+        self.morphem_stop_tags = {'1SG??', '1SG???', '1SGОЖИДАЛСЯ', '2SG?', '3SGПОЧЕМУ.НЕ.RFL?', '?', '???', '???ФОРМА',
+                                  'ABL?', 'ACC??', 'ACCIN?', 'ADJ?', 'ADVZ???', 'DATLOC(?)', 'EVERY(TIKIN?)' 'FOC?',
+                                  'INDEF(?)', 'INDPS?', 'INSTR???', 'INTS???', 'LOCALLНЕПОНЯТНО.ПОЧЕМУ', 'MISPRINT?',
+                                  'PANTИЛИ.STAT?', 'PL?', 'PL???', 'PLВЕРОЯТНО,', 'PLВИДИМО,', 'PLОЖИДАЛСЯ',
+                                  'EVERY(TIKIN?)', 'PLПОЧЕМУ.СКАЗУЕМОЕ.SG?', 'PS1SG?', 'PS1SGГДЕ', 'CAUS?',
+                                  'PS1SGОЖИДАЕТСЯ.ACC.RFL', 'PROPR?', 'PS3SGФУНКЦИЯ', 'PSIM2???', 'PSIMN?',
+                                  'RFL.PLВ.ПЕРЕВОДЕ:С.УЧИТЕЛЯМИ', 'FOC?', 'RFLОЖИДАЕТСЯ.PL', 'SLIP?', 'БЫТЬ',
+                                  'ТАК', 'ФОНЕТИЧЕСКАЯ', 'неясно', 'форма', 'PRS??', 'ABLСЕМАНТИКА', 'PRGRN?'}
+
+        self.corrupted_morphems = 0
+
     def read_file(self):
         strings = []
         file_object = open(self.path2data_file, "r")
@@ -76,13 +87,25 @@ class MorphemsDataSetCreator:
     def get_morph_borders(self, data):
         borders = []
         for pair in data:
+
             morphems_with_classes = [(m.split('_')[0], m.split('_')[1]) if '_' in m else (m, 'ROOT') for m in pair[1].split()]
-            classes_to_chars = [self.classes2chars(el) for el in morphems_with_classes]
-            classes_to_chars = [ch for m in classes_to_chars for ch in m]
-            borders.append(
-                (' '.join([el[0] for el in classes_to_chars]),
-                 ' '.join([el[1] for el in classes_to_chars]))
-            )
+
+            if not set([el[-1] for el in morphems_with_classes]).intersection(self.morphem_stop_tags):
+
+                print(morphems_with_classes)
+
+                # classes_to_chars = [self.classes2chars(el) for el in morphems_with_classes]
+                # classes_to_chars = [ch for m in classes_to_chars for ch in m]
+
+                borders.append(
+                    (' '.join([el[0] for el in morphems_with_classes]),
+                     ' '.join([el[1] for el in morphems_with_classes]))
+                )
+            else:
+                self.corrupted_morphems += 1
+
+        print("corrupted_morphems: ", self.corrupted_morphems)
+
         return borders
 
     def find_char_positions(self, patterns, initial_text):
