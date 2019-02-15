@@ -92,8 +92,6 @@ class MorphemsDataSetCreator:
 
             if not set([el[-1] for el in morphems_with_classes]).intersection(self.morphem_stop_tags):
 
-                print(morphems_with_classes)
-
                 # classes_to_chars = [self.classes2chars(el) for el in morphems_with_classes]
                 # classes_to_chars = [ch for m in classes_to_chars for ch in m]
 
