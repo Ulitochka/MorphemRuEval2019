@@ -29,8 +29,6 @@ class MorphemsDataSetCreator:
                                   'RFL.PLВ.ПЕРЕВОДЕ:С.УЧИТЕЛЯМИ', 'FOC?', 'RFLОЖИДАЕТСЯ.PL', 'SLIP?', 'БЫТЬ',
                                   'ТАК', 'ФОНЕТИЧЕСКАЯ', 'неясно', 'форма', 'PRS??', 'ABLСЕМАНТИКА', 'PRGRN?'}
 
-        self.corrupted_morphems = 0
-
     def read_file(self):
         strings = []
         file_object = open(self.path2data_file, "r")
@@ -86,6 +84,9 @@ class MorphemsDataSetCreator:
 
     def get_morph_borders(self, data):
         borders = []
+
+        corrupted_morphems = 0
+
         for pair in data:
 
             morphems_with_classes = [(m.split('_')[0], m.split('_')[1]) if '_' in m else (m, 'ROOT') for m in pair[1].split()]
@@ -100,9 +101,9 @@ class MorphemsDataSetCreator:
                      ' '.join([el[1] for el in morphems_with_classes]))
                 )
             else:
-                self.corrupted_morphems += 1
+                corrupted_morphems += 1
 
-        print("corrupted_morphems: ", self.corrupted_morphems)
+        print("corrupted_morphems: ", corrupted_morphems)
 
         return borders
 

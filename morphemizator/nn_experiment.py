@@ -231,7 +231,7 @@ model_mk2.fit(
     x=x_train,
     y=y_train,
     batch_size=32,
-    epochs=50,
+    epochs=10,
     validation_split=0.1,
     verbose=1,
     shuffle=True,
