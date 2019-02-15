@@ -5,7 +5,7 @@ from collections import Counter
 FREQ_THR = 5
 
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-data_path = os.path.join(project_path + '/morphemizator/data/train_24_01.txt')
+data_path = os.path.join(project_path + '/morphemizator/data/train_эвенкийский.txt')
 
 
 def read_file(path2data_file):

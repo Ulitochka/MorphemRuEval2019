@@ -56,8 +56,8 @@ class Lemmatizer:
                     yield s
 
     def form_input(self):
-        src_shards = misc.split_lemmatize_corpus(self.opt.src)
-        c_s, max_len_s = misc.count_sent(self.opt.src)
+        src_shards = self.split_lemmatize_corpus(self.opt.src)
+        c_s, max_len_s = self.count_sent(self.opt.src)
         self.max_sent_len = max_len_s
         tgt_shards = [None] * c_s
         return zip(src_shards, tgt_shards)

@@ -4,7 +4,7 @@ set -e
 SCRIPT=$(readlink -f $0)
 SCRIPT_PATH=`dirname $SCRIPT`
 COMMAND_PATH=`realpath ${SCRIPT_PATH}/OpenNMT-py/`
-DATA_PATH=`realpath ${SCRIPT_PATH}/folds/`
+DATA_PATH=`realpath ${SCRIPT_PATH}/folds_селькупский/`
 
 for FOLD in 0 1 2 3 4 5 6 7 8 9
 do

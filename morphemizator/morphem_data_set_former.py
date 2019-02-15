@@ -14,7 +14,7 @@ class MorphemsDataSetCreator:
     def __init__(self, folds_n):
         self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
         self.path2data_file = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '../')) + '/morphemizator/data/train_24_01.txt'
+            os.path.join(os.path.dirname(__file__), '../')) + '/morphemizator/data/train_эвенкийский.txt'
 
         self.folds_n = folds_n
         self.sentences = self.read_file()

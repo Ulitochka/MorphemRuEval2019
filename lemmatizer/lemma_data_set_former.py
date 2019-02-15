@@ -18,16 +18,17 @@ class SetEncoder(json.JSONEncoder):
 
 
 class LemmaDataSetCreator:
-    def __init__(self, folds_n):
-        data_loader = DataLoader()
+    def __init__(self, folds_n, language):
+        data_loader = DataLoader(language=language)
         self.folds_n = folds_n
+        self.language = language
         strings = data_loader.read_file()
         self.sentences = data_loader.form_sentences(strings)
         self.stop_lemma = ['()', '_']
 
         self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-        self.path2paradigms = self.project_path + '/lemmatizer/data/paradigms.json'
-        self.form2lemmas = self.project_path + '/lemmatizer/data/form2lemmas.json'
+        self.path2paradigms = self.project_path + '/lemmatizer/data/paradigms_%s.json' % (language,)
+        self.form2lemmas = self.project_path + '/lemmatizer/data/form2lemmas_%s.json' % (language,)
         self.corrupted_lemmas = ['_']
 
     def form_sent_pairs(self):
@@ -35,7 +36,7 @@ class LemmaDataSetCreator:
         for sent in self.sentences:
             sentence_forma = ' '.join([t.forma + '%' + t.pos for t in sent if t.pos not in self.corrupted_lemmas])
             sentence_lemma = ' '.join([t.lemma for t in sent if t.lemma not in self.corrupted_lemmas])
-            data_set_forma2lemma_sentences.append(sentence_forma + '_' + sentence_lemma)
+            data_set_forma2lemma_sentences.append(sentence_forma + '@' + sentence_lemma)
         return data_set_forma2lemma_sentences
 
     def group_paradigms(self, data):
@@ -70,29 +71,25 @@ class LemmaDataSetCreator:
 
     def sent_pair2tokens(self, data):
         return [t_p for s_pair in data for t_p in list(
-                zip(s_pair.split('_')[0].split(' '),
-                    s_pair.split('_')[1].split(' ')))]
+                zip(s_pair.split('@')[0].split(' '),
+                    s_pair.split('@')[1].split(' ')))]
 
     def sent_pair2tokens_chars(self, data, use_pos=True):
-        return [
-            (' '.join(list(t_p[0].split('%')[0])) + ' ' + t_p[0].split('%')[1], ' '.join(list(t_p[1])))
-            for s_pair in data for t_p in list(zip(s_pair.split('_')[0].split(' '), s_pair.split('_')[1].split(' ')))] \
-            if use_pos else [
-            (' '.join(list(t_p[0].split('%')[0])), ' '.join(list(t_p[1]))) for s_pair in data for t_p in list(
-                zip(s_pair.split('_')[0].split(' '), s_pair.split('_')[1].split(' ')))]
+        result = []
+        for s_pair in data:
+            print(s_pair)
+            for t_p in list(zip(s_pair.split('@')[0].split(' '), s_pair.split('@')[1].split(' '))):
+                if use_pos:
+                    try:
+                      result.append((' '.join(list(t_p[0].split('%')[0])) + ' ' + t_p[0].split('%')[1], ' '.join(list(t_p[1]))))
+                    except IndexError:
+                        pass
+                else:
+                    result.append((' '.join(list(t_p[0].split('%')[0])), ' '.join(list(t_p[1]))))
+        return result
 
     def sent_pair2sentence_tokens(self, data):
-        return [s_pair.split('_') for s_pair in data]
-
-    def sent_pair2sentence_chars(self, data, use_pos=True):
-        return [
-        (
-            ' & '.join([' '.join(list(t.split('%')[0])) + ' ' + t.split('%')[1] for t in s_pair.split('_')[0].split(' ')]),
-            ' & '.join([' '.join(list(t)) for t in s_pair.split('_')[1].split(' ')]))
-            for s_pair in data] if use_pos else [
-        (
-            ' & '.join([' '.join(list(t.split('%')[0])) for t in s_pair.split('_')[0].split(' ')]),
-            ' & '.join([' '.join(list(t)) for t in s_pair.split('_')[1].split(' ')])) for s_pair in data]
+        return [s_pair.split('@') for s_pair in data]
 
     def split_data(self, data):
         kf = KFold(n_splits=self.folds_n, shuffle=True, random_state=1024)
@@ -102,7 +99,7 @@ class LemmaDataSetCreator:
 
             X_train, X_test = [data[i] for i in train_index], [data[i] for i in test_index]
             X_test, X_valid = train_test_split(X_test, random_state=1024)
-            project_path = os.path.join(self.project_path + '/lemmatizer/folds/%s/' % (f_n,))
+            project_path = os.path.join(self.project_path + '/lemmatizer/folds_%s/%s/' % (self.language, f_n,))
             distutils.dir_util.mkpath(project_path)
 
             data_set = {
@@ -129,20 +126,7 @@ class LemmaDataSetCreator:
                     "train": self.sent_pair2sentence_tokens(X_train),
                     "test": self.sent_pair2sentence_tokens(X_test),
                     "valid": self.sent_pair2sentence_tokens(X_valid)
-                },
-
-                "sentence_chars_pos": {
-                    "train": self.sent_pair2sentence_chars(X_train, use_pos=True),
-                    "test": self.sent_pair2sentence_chars(X_test, use_pos=True),
-                    "valid": self.sent_pair2sentence_chars(X_valid, use_pos=True)
-                },
-
-                "sentence_chars": {
-                    "train": self.sent_pair2sentence_chars(X_train, use_pos=False),
-                    "test": self.sent_pair2sentence_chars(X_test, use_pos=False),
-                    "valid": self.sent_pair2sentence_chars(X_valid, use_pos=False)
                 }
-
             }
 
             for ds in data_set:
@@ -153,8 +137,8 @@ class LemmaDataSetCreator:
                 print('Fold #%s; train: %s; test: %s: valid: %s; data_type: %s;' % (
                     f_n, len(data_set[ds]['train']), len(data_set[ds]['test']), len(data_set[ds]['valid']), ds))
 
-                if ds == 'token_pos':
-                    self.group_paradigms(data_set[ds]['train'] + data_set[ds]['test'] + data_set[ds]['valid'])
+                # if ds == 'token_pos':
+                #     self.group_paradigms(data_set[ds]['train'] + data_set[ds]['test'] + data_set[ds]['valid'])
 
             self.save_spec_test_format(data_set['sentence_tokens']['test'], project_path, 'txt', 'EXERCISE_INPUT')
             self.save_spec_test_format(data_set['sentence_tokens']['test'], project_path, 'txt', 'EXERCISE_TEST')
@@ -175,7 +159,12 @@ class LemmaDataSetCreator:
             for s_pair in data:
                 if data_type.endswith('INPUT'):
                     for t in s_pair[0].split(' '):
-                        file_string = "_	%s	_	%s	_	_	_	_	_	_" % (t.split('%')[0], t.split('%')[1])
+
+                        try:
+                            file_string = "_	%s	_	%s	_	_	_	_	_	_" % (t.split('%')[0], t.split('%')[1])
+                        except IndexError:
+                            file_string = "_	%s	_	_	_	_	_	_	_	_" % (t.split('%')[0],)
+
                         outfile.write(file_string + '\n')
                 else:
 
@@ -183,11 +172,17 @@ class LemmaDataSetCreator:
                     lemmas = s_pair[1].split(' ')
 
                     for index_t in range(len(forms)):
-                        file_string = "_	%s	%s	%s	_	_	_	_	_	_" % (
-                            forms[index_t].split('%')[0],
-                            lemmas[index_t],
-                            forms[index_t].split('%')[1]
-                        )
+                        try:
+                            file_string = "_	%s	%s	%s	_	_	_	_	_	_" % (
+                                forms[index_t].split('%')[0],
+                                lemmas[index_t],
+                                forms[index_t].split('%')[1]
+                            )
+                        except IndexError:
+                            file_string = "_	%s	%s	_	_	_	_	_	_	_" % (
+                                forms[index_t].split('%')[0],
+                                lemmas[index_t])
+
                         outfile.write(file_string + '\n')
 
                 outfile.write('\n')
@@ -210,8 +205,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Data for Evaluator')
     parser.add_argument('--folds_n', type=int, required=True)
+    parser.add_argument('--language', type=str, required=True)
     args = parser.parse_args()
 
-    lemma_data_set_creator = LemmaDataSetCreator(folds_n=args.folds_n)
+    lemma_data_set_creator = LemmaDataSetCreator(folds_n=args.folds_n, language=args.language)
     data_set_forma2lemma_sentences = lemma_data_set_creator.form_sent_pairs()
     lemma_data_set_creator.split_data(data_set_forma2lemma_sentences)

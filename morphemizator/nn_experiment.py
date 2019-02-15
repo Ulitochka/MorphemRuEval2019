@@ -20,6 +20,8 @@ project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 data_path = os.path.join(project_path + '/morphemizator/folds/%s/' % (f_n,))
 model_path = os.path.join(project_path + '/morphemizator/models/')
 
+USE_CRF = True
+
 
 data_set = {
     "train": {
@@ -132,6 +134,17 @@ model_mk1.compile(optimizer='adam', loss="categorical_crossentropy")
 
 ########################################################################################################################
 
+
+class ReversedLSTM(LSTM):
+    def __init__(self, units, **kwargs):
+        kwargs['go_backwards'] = True
+        super().__init__(units, **kwargs)
+
+    def call(self, inputs, **kwargs):
+        y_rev = super().call(inputs, **kwargs)
+        return K.reverse(y_rev, 1)
+
+
 input_char_emb = Input((max_w_len,), name='input_char_emb')
 
 char_emb = Embedding(
@@ -163,14 +176,37 @@ outputs = Add()([transformed_gated, carried_gated])
 highway = Model(inputs=hway_input, outputs=outputs)
 chars_vectors = highway(cnns)
 
-lstm_enc, fh, fc, bh, bc = Bidirectional(LSTM(256, return_sequences=True, return_state=True))(chars_vectors)
-lstm_dec = Bidirectional(LSTM(256, return_sequences=True))(lstm_enc, initial_state=[bh, bc, fh, fc])
 
-lyr_crf = CRF(len(labels2ind) + 1)
-output = lyr_crf(lstm_dec)
+if USE_CRF:
+    lstm_enc, fh, fc, bh, bc = Bidirectional(LSTM(256, return_sequences=True, return_state=True))(chars_vectors)
+    lstm_dec = Bidirectional(LSTM(256, return_sequences=True))(lstm_enc, initial_state=[bh, bc, fh, fc])
+    lyr_crf = CRF(len(labels2ind) + 1)
+    outputs = lyr_crf(lstm_dec)
+    model_mk2 = Model(inputs=input_char_emb, outputs=outputs)
+    model_mk2.compile(optimizer='adam', loss=lyr_crf.loss_function)
+else:
+    lstm_forward_1 = LSTM(256, return_sequences=True, name='LSTM_1_forward')(chars_vectors)
+    lstm_backward_1 = ReversedLSTM(256, return_sequences=True, name='LSTM_1_backward')(chars_vectors)
+    layer = concatenate([lstm_forward_1, lstm_backward_1], name="BiLSTM_input")
+    layer = Bidirectional(LSTM(256, return_sequences=True, name='LSTM_1'))(layer)
 
-model_mk2 = Model(inputs=input_char_emb, outputs=output)
-model_mk2.compile(optimizer='adam', loss=lyr_crf.loss_function)
+    layer = TimeDistributed(Dense(128))(layer)
+    layer = TimeDistributed(Dropout(0.5))(layer)
+    layer = TimeDistributed(BatchNormalization())(layer)
+    layer = TimeDistributed(Activation('relu'))(layer)
+
+    outputs = []
+    loss = {}
+    prev_layer_name = 'shifted_pred_prev'
+    next_layer_name = 'shifted_pred_next'
+    prev_layer = Dense(len(labels2ind) + 1, activation='softmax', name=prev_layer_name)
+    next_layer = Dense(len(labels2ind) + 1, activation='softmax', name=next_layer_name)
+    outputs.append(prev_layer(Dense(128, activation='relu')(lstm_backward_1)))
+    outputs.append(next_layer(Dense(128, activation='relu')(lstm_forward_1)))
+    loss[prev_layer_name] = loss[next_layer_name] = 'categorical_crossentropy'
+    model_mk2 = Model(inputs=input_char_emb, outputs=outputs)
+    model_mk2.compile(Adam(clipnorm=5.), loss=loss)
+
 
 #######################################################################################################################
 
@@ -193,9 +229,9 @@ model_mk2.fit(
     x=x_train,
     y=y_train,
     batch_size=32,
-    epochs=10,
+    epochs=50,
     validation_split=0.1,
-    verbose=20,
+    verbose=1,
     shuffle=True,
     callbacks=[model_checkpoint, early_stopping])
 
@@ -221,4 +257,3 @@ y_test, pr = preparation_data_to_score(y_test, pr)
 y_test = [ind2labels[l] for l in y_test]
 pr = [ind2labels.get(l, "ROOT") for l in pr]
 print(classification_report(y_test, pr, digits=4))
-print(f1_score(y_test, pr, average='macro'))

@@ -14,7 +14,7 @@ from sklearn_crfsuite import metrics
 
 f_n = 0
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-project_path = os.path.join(project_path + '/morphemizator/folds/%s/' % (f_n,))
+project_path = os.path.join(project_path + '/morphemizator/folds_эвенкийский/%s/' % (f_n,))
 
 
 data_set = {

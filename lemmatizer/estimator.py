@@ -6,7 +6,7 @@ from tools import Tools
 
 class Estimator:
     def __init__(self):
-        self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../lemmatizer/folds/'))
+        self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../lemmatizer/folds_эвенкийский/'))
         self.folds_n = 10
         self.tools = Tools()
 

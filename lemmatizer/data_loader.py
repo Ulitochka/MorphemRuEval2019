@@ -7,9 +7,9 @@ DataObject = namedtuple('DataObject', ['token_id', 'forma', 'lemma', 'pos', 'mor
 
 
 class DataLoader:
-    def __init__(self):
+    def __init__(self, language):
         self.path2data_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '../')) + \
-                              '/lemmatizer/data/train_24_01.txt'
+                              '/lemmatizer/data/train_%s.txt' % (language,)
 
     def read_file(self):
         strings = []
