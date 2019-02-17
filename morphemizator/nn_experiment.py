@@ -22,20 +22,20 @@ parser.add_argument("--hidden_states", type=int, required=True)
 parser.add_argument("--epochs", type=int, required=True)
 parser.add_argument("--batch_size", type=int, required=True)
 parser.add_argument("--char_random_emb_size", type=int, required=True)
+parser.add_argument("--use_crf", type=bool, required=True)
 args = parser.parse_args()
 
 HIDDEN_STATES = args.hidden_states
 EPOCHS = args.epochs
 BATCH_SIZE = args.batch_size
 CHAR_RANDOM_EMB_SIZE = args.char_random_emb_size
+USE_CRF = args.use_crf
+USE_CONTEXT = False
 
 f_n = 0
 project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 data_path = os.path.join(project_path + '/morphemizator/folds/%s/' % (f_n,))
 model_path = os.path.join(project_path + '/morphemizator/models/')
-
-USE_CRF = True
-
 
 data_set = {
     "train": {
@@ -261,7 +261,7 @@ if USE_CRF:
     outputs = lyr_crf(lstm_dec)
     model_mk2 = Model(inputs=[input_char_per_token, input_char], outputs=outputs)
     model_mk2.compile(optimizer='adam', loss=lyr_crf.loss_function)
-else:
+elif USE_CONTEXT:
     lstm_forward_1 = LSTM(256, return_sequences=True, name='LSTM_1_forward')(word_vects)
     lstm_backward_1 = ReversedLSTM(256, return_sequences=True, name='LSTM_1_backward')(word_vects)
     layer = concatenate([lstm_forward_1, lstm_backward_1], name="BiLSTM_input")
@@ -283,7 +283,11 @@ else:
     loss[prev_layer_name] = loss[next_layer_name] = 'categorical_crossentropy'
     model_mk2 = Model(inputs=[input_char_per_token, input_char], outputs=outputs)
     model_mk2.compile(Adam(clipnorm=5.), loss=loss)
-
+else:
+    dense_network = TimeDistributed(Dense(128, activation='relu'))(word_vects)
+    output = Dense((len(labels2ind) + 1), activation='softmax')(dense_network)
+    model_mk2 = Model(inputs=[input_char_per_token, input_char], outputs=output)
+    model_mk2.compile(optimizer='adam', loss="categorical_crossentropy")
 
 #######################################################################################################################
 
@@ -326,9 +330,12 @@ def preparation_data_to_score(yh, pr):
     return fyh, fpr
 
 
-custom_objects = {'CRF': CRF, 'crf_loss': crf_loss}
+if USE_CRF:
+    custom_objects = {'CRF': CRF, 'crf_loss': crf_loss}
+    model = load_model(os.path.join(model_path + '/model.pkl'), custom_objects=custom_objects)
+else:
+    model = load_model(os.path.join(model_path + '/model.pkl'))
 
-model = load_model(os.path.join(model_path + '/model.pkl'), custom_objects=custom_objects)
 pr = model.predict([x_test_tokens_pad, x_test_chars_pad], verbose=1)
 y_test, pr = preparation_data_to_score(y_test, pr)
 y_test = [ind2labels[l] for l in y_test]
