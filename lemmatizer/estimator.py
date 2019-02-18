@@ -1,18 +1,23 @@
 import os
+import argparse
 from itertools import groupby
 
 from tools import Tools
 
 
 class Estimator:
-    def __init__(self):
-        self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../lemmatizer/folds_эвенкийский/'))
+    def __init__(self, language):
+        self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../lemmatizer/folds_%s/' %
+                                                         (language,)))
         self.folds_n = 10
         self.tools = Tools()
 
     def compare(self, predict, true):
         predict = [[t.split('\t') for t in list(y)] for x, y in groupby(predict, lambda z: z == '') if not x]
         true = [[t.split('\t') for t in list(y)] for x, y in groupby(true, lambda z: z == '') if not x]
+
+        predict = [[w for w in s if w[3] != 'X'] for s in predict]
+        true = [[w for w in s if w[3] != 'X'] for s in true]
 
         acc_per_forms = 0
         total_forms = 0
@@ -65,5 +70,9 @@ class Estimator:
 
 
 if __name__ == '__main__':
-    estimator = Estimator()
+    parser = argparse.ArgumentParser(description='Data for Evaluator')
+    parser.add_argument('--language', type=str, required=True)
+    args = parser.parse_args()
+
+    estimator = Estimator(language=args.language)
     estimator.estimate()
