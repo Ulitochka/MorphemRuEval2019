@@ -39,7 +39,7 @@ class PosTaggerTrainer:
         self.target_language = target_language
         self.max_seq_len = 128
         self.enc_hidden_dim = 256
-        self.n_epochs = 1
+        self.n_epochs = 2
 
         self.tools = Tools()
 
@@ -85,7 +85,7 @@ class PosTaggerTrainer:
     def train(self):
         learner = NerLearner(self.model,
                              self.data,
-                             best_model_path=os.path.join(self.models, "/bilstm_attn_cased_%s_morpho%s.cpt" % (
+                             best_model_path=os.path.join(self.models, "bilstm_attn_cased_%s_morpho_%s.cpt" % (
                                  self.target_language, self.pos)),
                              lr=0.001,
                              clip=1.0,

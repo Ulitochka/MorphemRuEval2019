@@ -1,10 +1,12 @@
 import os
 import json
+from tqdm import tqdm
 import distutils.dir_util
 import argparse
 from collections import Counter
 
 from sklearn.model_selection import KFold, train_test_split
+import pandas as pd
 
 from data_loader import DataLoader
 
@@ -37,15 +39,10 @@ class LemmaDataSetCreator:
             "карельский_людик": ["ADV", "PRON", "VERB", "NOUN", "ADJ", "NUM", "CCONJ", "INTJ", "AUX", "PART", "ADP"]
         }
 
-        for pos in self.pos_language_labels[language]:
+        for pos in tqdm(self.pos_language_labels[language], desc=language):
             data_set_forma2lemma_sentences, labels_stata = self.form_sent_pairs(pos=pos)
-
-            print(language, pos, labels_stata)
-
             if sum([labels_stata[el] for el in labels_stata if el != 'X']) >= 100:
                 self.split_data(data_set_forma2lemma_sentences, pos=pos)
-
-        print('%' * 100)
 
     def form_sent_pairs(self, pos):
 
@@ -72,7 +69,10 @@ class LemmaDataSetCreator:
         for p in data:
             try:
                 r = [t.split('%') for t in p.split('@')[0].split()]
-                sent.append((' '.join([el[0] for el in r]), ' '.join([el[1] for el in r])))
+                sent.append(
+                    (' '.join(['I_' + el[1].replace('PROPN', 'NOUN') for el in r]),
+                     ' '.join([el[0] for el in r]))
+                )
             except IndexError:
                 pass
         return sent
@@ -98,19 +98,16 @@ class LemmaDataSetCreator:
                 }
             }
 
-            for ds in data_set:
-                self.save_data_set(data_set[ds]['train'], project_path, 'train', ds)
-                self.save_data_set(data_set[ds]['test'], project_path, 'test', ds)
-                self.save_data_set(data_set[ds]['valid'], project_path, 'valid', ds)
+            x_train = data_set["sentence_tokens_pos"]["train"] + data_set["sentence_tokens_pos"]["valid"]
+            x_test = data_set["sentence_tokens_pos"]["test"]
+
+            train_df = pd.DataFrame(x_train, columns=["0", "1"])
+            train_df.to_csv(project_path + "/train.csv", index=False)
+
+            valid_df = pd.DataFrame(x_test, columns=["0", "1"])
+            valid_df.to_csv(project_path + "/valid.csv", index=False)
 
             f_n += 1
-
-    def save_data_set(self, data, project_path, prefix, data_type):
-        for el in (('src', 0), ('trg', 1)):
-            with open(project_path + '%s_%s.%s' % (el[0], data_type, prefix), 'w') as outfile:
-                for pair in data:
-                    outfile.write(pair[el[1]] + '\n')
-                outfile.close()
 
 
 if __name__ == '__main__':
