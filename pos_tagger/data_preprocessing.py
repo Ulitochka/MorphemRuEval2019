@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 
 import pandas as pd
 
@@ -13,7 +14,8 @@ pos_language_labels = {
         }
 
 
-for l in ["карельский_людик", "карельский_ливвик", "эвенкийский", "селькупский", "карельский_кар", "вепсский"]:
+for l in tqdm(["карельский_людик", "карельский_ливвик", "эвенкийский", "селькупский", "карельский_кар", "вепсский"],
+              desc='prep_languages'):
     for f_n in [0, 1, 2, 3]:
         project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
         for pos in pos_language_labels[l]:
@@ -66,10 +68,6 @@ for l in ["карельский_людик", "карельский_ливвик"
                 x_train = [[' '.join(['I_' + el[1].replace('PROPN', 'NOUN') for el in s]), ' '.join([el[0] for el in s])] for s in train]
                 x_test = [[' '.join(['I_' + el[1].replace('PROPN', 'NOUN') for el in s]), ' '.join([el[0] for el in s])] for s in test]
                 max_len = max([len(s[1].split()) for s in x_test + x_train])
-
-                print(x_train[10])
-                print(x_test[10])
-                print(max_len)
 
                 train_df = pd.DataFrame(x_train, columns=["0", "1"])
                 train_df.to_csv(data_path + "train.csv", index=False)
