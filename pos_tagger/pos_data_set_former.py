@@ -103,13 +103,6 @@ class LemmaDataSetCreator:
                 self.save_data_set(data_set[ds]['test'], project_path, 'test', ds)
                 self.save_data_set(data_set[ds]['valid'], project_path, 'valid', ds)
 
-                # print('Fold #%s; train: %s; test: %s: valid: %s; data_type: %s;' % (
-                #     f_n, len(data_set[ds]['train']), len(data_set[ds]['test']), len(data_set[ds]['valid']), ds))
-
-            self.save_spec_test_format(data_set['sentence_tokens_pos']['test'], project_path, 'txt', 'EXERCISE_INPUT')
-
-            # print('#' * 100)
-
             f_n += 1
 
     def save_data_set(self, data, project_path, prefix, data_type):
@@ -118,40 +111,6 @@ class LemmaDataSetCreator:
                 for pair in data:
                     outfile.write(pair[el[1]] + '\n')
                 outfile.close()
-
-    def save_spec_test_format(self, data, project_path, prefix, data_type):
-        with open(project_path + '%s.%s' % (data_type, prefix), 'w') as outfile:
-            for s_pair in data:
-                if data_type.endswith('INPUT'):
-                    for t in s_pair[0].split(' '):
-
-                        try:
-                            file_string = "_	%s	_	%s	_	_	_	_	_	_" % (t.split('%')[0], t.split('%')[1])
-                        except IndexError:
-                            file_string = "_	%s	_	_	_	_	_	_	_	_" % (t.split('%')[0],)
-
-                        outfile.write(file_string + '\n')
-                else:
-
-                    forms = s_pair[0].split(' ')
-                    lemmas = s_pair[1].split(' ')
-
-                    for index_t in range(len(forms)):
-                        try:
-                            file_string = "_	%s	%s	%s	_	_	_	_	_	_" % (
-                                forms[index_t].split('%')[0],
-                                lemmas[index_t],
-                                forms[index_t].split('%')[1]
-                            )
-                        except IndexError:
-                            file_string = "_	%s	_	%s	_	_	_	_	_	_" % (
-                                forms[index_t].split('%')[0],
-                                lemmas[index_t])
-
-                        outfile.write(file_string + '\n')
-
-                outfile.write('\n')
-            outfile.close()
 
 
 if __name__ == '__main__':

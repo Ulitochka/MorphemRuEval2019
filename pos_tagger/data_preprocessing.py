@@ -70,10 +70,10 @@ for l in tqdm(["карельский_людик", "карельский_ливв
                 max_len = max([len(s[1].split()) for s in x_test + x_train])
 
                 train_df = pd.DataFrame(x_train, columns=["0", "1"])
-                train_df.to_csv(data_path + "train.csv", index=False)
+                train_df.to_csv(data_path + "/train.csv", index=False)
 
                 valid_df = pd.DataFrame(x_test, columns=["0", "1"])
-                valid_df.to_csv(data_path + "valid.csv", index=False)
+                valid_df.to_csv(data_path + "/valid.csv", index=False)
 
             except FileNotFoundError:
                 pass

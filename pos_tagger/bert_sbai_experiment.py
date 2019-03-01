@@ -7,7 +7,7 @@ from models.modules.models.bert_models import BertBiLSTMAttnCRF
 from models.modules import NerLearner
 from models.modules.data.bert_data import get_bert_data_loader_for_predict
 from models.modules.train.train import validate_step
-from pos_tagger.tools import Tools
+from tools import Tools
 
 import torch
 from sklearn_crfsuite.metrics import flat_classification_report
@@ -28,49 +28,45 @@ class PosTaggerTrainer:
         """
 
         self.pos_language_labels = {
-            "эвенкийский": ["INTJ", "ADV", "PART", "VERB", "PRON", "NOUN", "ADJ", "DET", "CCONJ", "NUM", "SCONJ"],
-            "селькупский": ["NOUN", "VERB", "ADV", "CCONJ", "DET", "PART", "PRON", "NUM", "ADJ", "INTJ", "ADP"],
-            "вепсский": ["NOUN", "ADV", "VERB", "NUM", "PRON", "PART", "CCONJ", "AUX", "SCONJ", "INTJ", "ADP", "ADJ"],
-            "карельский_кар": ["CCONJ", "NOUN", "VERB", "PRON", "AUX", "ADJ", "ADV", "NUM", "ADP", "INTJ"],
-            "карельский_ливвик": ["ADV", "NOUN", "ADJ", "SCONJ", "ADP", "NUM", "CCONJ", "PART", "VERB", "PRON", "INTJ"],
-            "карельский_людик": ["ADV", "PRON", "VERB", "NOUN", "ADJ", "NUM", "CCONJ", "INTJ", "AUX", "PART", "ADP"]
+            "эвенкийский": ["ADV", "VERB", "PRON", "NOUN", "ADJ", "DET"],
+            "селькупский": ["NOUN", "VERB", "ADV", "PRON", "ADP"],
+            "вепсский": ["NOUN", "ADV", "VERB", "NUM", "PRON", "AUX", "ADJ"],
+            "карельский_кар": ["NOUN", "VERB", "PRON", "AUX", "ADJ"],
+            "карельский_ливвик": ["NOUN", "ADJ", "NUM", "VERB", "PRON"],
+            "карельский_людик": ["VERB", "NOUN", "PRON"]
         }
 
         self.target_language = target_language
         self.max_seq_len = 128
         self.enc_hidden_dim = 256
-        self.n_epochs = 50
+        self.n_epochs = 1
 
         self.tools = Tools()
 
-        for fold in [0, 1, 2, 3]:
-            for pos in self.pos_language_labels[target_language]:
+        for pos in self.pos_language_labels[target_language]:
 
-                try:
+            self.tools.init_logging('morpho_log_%s_%s' % (target_language, pos))
 
-                    self.tools.init_logging('morpho_log_%s_%s' % (target_language, pos))
+            for fold in [0, 1, 2, 3]:
 
-                    self.fold = fold
-                    self.pos = pos
+                self.fold = fold
+                self.pos = pos
 
-                    self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-                    self.data_path = os.path.join(self.project_path + '/pos_tagger/folds_%s_morpho/%s/%s' % (
-                        target_language, self.fold, self.pos))
-                    self.models = os.path.join(self.project_path + '/pos_tagger/models/')
-                    self.bert_model_dir = "/home/m.domrachev/Models/multi_cased_L-12_H-768_A-12"
-                    self.stop_labels = ['<pad>', '[CLS]', 'X', 'I_X']
+                self.project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+                self.data_path = os.path.join(self.project_path + '/pos_tagger/folds_%s_morpho/%s/%s/' % (
+                    target_language, self.fold, self.pos))
+                self.models = os.path.join(self.project_path + '/pos_tagger/models/')
+                self.bert_model_dir = "/home/m.domrachev/Models/multi_cased_L-12_H-768_A-12"
+                self.stop_labels = ['<pad>', '[CLS]', 'X', 'I_X']
 
-                    self.init_checkpoint_pt = os.path.join(self.bert_model_dir, "pytorch_model.bin")
-                    self.bert_config_file = os.path.join(self.bert_model_dir, "bert_config.json")
-                    self.vocab_file = os.path.join(self.bert_model_dir, "vocab.txt")
+                self.init_checkpoint_pt = os.path.join(self.bert_model_dir, "pytorch_model.bin")
+                self.bert_config_file = os.path.join(self.bert_model_dir, "bert_config.json")
+                self.vocab_file = os.path.join(self.bert_model_dir, "vocab.txt")
 
-                    self.data, self.support_labels = self.get_dataset()
-                    self.model = self.get_model()
-                    self.learner = self.train()
-                    self.predict()
-
-                except FileNotFoundError:
-                    pass
+                self.data, self.support_labels = self.get_dataset()
+                self.model = self.get_model()
+                self.learner = self.train()
+                self.predict()
 
     def get_dataset(self):
         data = NerData.create(os.path.join(self.data_path + "train.csv"),
@@ -89,7 +85,7 @@ class PosTaggerTrainer:
     def train(self):
         learner = NerLearner(self.model,
                              self.data,
-                             best_model_path=os.path.join(self.models, "bilstm_attn_cased_%s_morpho%s.cpt" % (
+                             best_model_path=os.path.join(self.models, "/bilstm_attn_cased_%s_morpho%s.cpt" % (
                                  self.target_language, self.pos)),
                              lr=0.001,
                              clip=1.0,
@@ -121,7 +117,7 @@ class PosTaggerTrainer:
 
     def predict(self):
 
-        dl = get_bert_data_loader_for_predict(os.path.join(self.data_path + "valid.csv"), self.learner)
+        dl = get_bert_data_loader_for_predict(os.path.join(self.data_path + "/valid.csv"), self.learner)
         self.learner.load_model()
         preds = self.learner.predict(dl)
 
