@@ -17,7 +17,7 @@ torch.cuda.set_device(0)
 
 
 class PosTaggerTrainer:
-    def __init__(self, target_language):
+    def __init__(self, target_language, bert_path):
         """
         Possible models:
             BertBiLSTMCRF: Encoder + Decoder (BiLSTM + CRF)
@@ -56,7 +56,7 @@ class PosTaggerTrainer:
                 self.data_path = os.path.join(self.project_path + '/pos_tagger/folds_%s_morpho/%s/%s/' % (
                     target_language, self.fold, self.pos))
                 self.models = os.path.join(self.project_path + '/pos_tagger/models/')
-                self.bert_model_dir = "/home/m.domrachev/Models/multi_cased_L-12_H-768_A-12"
+                self.bert_model_dir = bert_path
                 self.stop_labels = ['<pad>', '[CLS]', 'X', 'I_X']
 
                 self.init_checkpoint_pt = os.path.join(self.bert_model_dir, "pytorch_model.bin")
@@ -143,7 +143,9 @@ class PosTaggerTrainer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Data for Evaluator')
     parser.add_argument('--language', type=str, required=True)
+    parser.add_argument('--bert_path', type=str, required=True)
     args = parser.parse_args()
     target_language = args.language
+    bert_path = args.bert_path
 
-    pos_tagger_trainer = PosTaggerTrainer(target_language=target_language)
+    pos_tagger_trainer = PosTaggerTrainer(target_language=target_language, bert_path=bert_path)

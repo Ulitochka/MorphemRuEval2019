@@ -6,7 +6,7 @@ import logging
 
 class Tools:
     def __init__(self):
-        self.log_path = '/home/m.domrachev/repos/MorphemRuEval2019/pos_tagger/'
+        self.log_path = os.path.join(os.path.dirname(__file__), '../pos_tagger/')
 
     def read_file(self, path2data_file):
         strings = []
