@@ -7,7 +7,7 @@ from models.modules.models.bert_models import BertBiLSTMAttnCRF
 from models.modules import NerLearner
 from models.modules.data.bert_data import get_bert_data_loader_for_predict
 from models.modules.train.train import validate_step
-from tools import Tools
+from pos_tagger.tools import Tools
 
 import torch
 from sklearn_crfsuite.metrics import flat_classification_report
