@@ -7,7 +7,7 @@ from models.modules.models.bert_models import BertBiLSTMAttnCRF
 from models.modules import NerLearner
 from models.modules.data.bert_data import get_bert_data_loader_for_predict
 from models.modules.train.train import validate_step
-from pos_tagger.tools import Tools
+from tools import Tools
 
 import torch
 from sklearn_crfsuite.metrics import flat_classification_report
@@ -39,7 +39,7 @@ class PosTaggerTrainer:
         self.target_language = target_language
         self.max_seq_len = 128
         self.enc_hidden_dim = 256
-        self.n_epochs = 2
+        self.n_epochs = 50
 
         self.tools = Tools()
 
